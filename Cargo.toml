@@ -1,0 +1,26 @@
+[package]
+name = "koin_bot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+regex = "1.5.6"
+image = "0.24.2"
+tiny-skia = "0.6.5"
+usvg = "0.23.0"
+resvg = "0.23.0"
+reqwest = {version = "0.11", features = ["blocking"]}
+serenity = { version = "0.11", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+chrono = "0.4.19"
+rusty-money = "0.4"
+currency = "0.4"
+rust_decimal = "1.25"
+average_color = "0.1"
+plotters = "0.3"
+serde_json = "1.0"
+lazy_static = "1.4"
