@@ -1,0 +1,64 @@
+name: Cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 1 * * *'
+
+env:
+  REGISTRY: 'registry.digitalocean.com/mangobot'
+  IMAGE_NAME: 'mangobot'
+
+jobs:
+  container_registry_cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+      - name: Login to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Remove all outdated manifests
+        run: |
+          DIGESTS=$(doctl registry repository list-tags $(echo $IMAGE_NAME) | grep -v $(echo $GITHUB_SHA | head -c7) | { grep -o "sha.*" || true; } )
+          if [ ! -z $(echo $DIGESTS) ]; then yes | doctl registry repository delete-manifest $(echo $IMAGE_NAME) $(echo $DIGESTS); else echo "No outdated manifests"; fi
+
+      - name: Start garbage collection
+        run: yes | doctl registry garbage-collection start
+
+  docker_cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart Docker container
+        uses: appleboy/ssh-action@master
+        env:
+          DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          GITHUB_SHA: $GITHUB_SHA
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          username: ${{ secrets.SSH_USERNAME }}
+          envs: IMAGE_NAME,REGISTRY,DIGITALOCEAN_TOKEN,GITHUB_SHA,DISCORD_TOKEN
+          script: |
+            # Login to registry
+            docker login -u $(echo $DIGITALOCEAN_TOKEN) -p $(echo $DIGITALOCEAN_TOKEN) registry.digitalocean.com
+            # Stop running container
+            docker stop $(echo $IMAGE_NAME)
+            # Remove old container
+            docker rm $(echo $IMAGE_NAME)
+            # Prune system
+            yes | docker system prune
+            # Run a new container from a new image
+            docker run -d \
+            -e DISCORD_TOKEN=$(echo $DISCORD_TOKEN) \
+            --restart always \
+            --name $(echo $IMAGE_NAME) \
+            $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
