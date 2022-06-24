@@ -1,1 +1,2 @@
-pub mod get_price;
+pub mod coin;
+pub mod niche;

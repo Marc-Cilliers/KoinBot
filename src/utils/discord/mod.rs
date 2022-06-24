@@ -40,23 +40,29 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
         let coin_list = get_top_coins().await.unwrap();
 
+        ApplicationCommand::create_global_application_command(&ctx.http, |command| {
+            command
+                .name("niche")
+                .description("Fetch price info for a niche coin")
+                .create_option(|option| {
+                    option
+                        .name("coin")
+                        .description("The coin's name")
+                        .kind(ApplicationCommandOptionType::String)
+                        .required(true)
+                })
+        })
+        .await
+        .expect("Error creating niche command");
+
         coin_list.into_iter().for_each(|coin| {
             let ctx_clone = ctx.clone();
             tokio::spawn(async move {
                 ApplicationCommand::create_global_application_command(&ctx_clone.http, |command| {
-                    command
-                        .name(coin.id)
-                        .description(format!(
-                            "Fetch price info for {} ({})",
-                            coin.name, coin.symbol
-                        ))
-                        .create_option(|option| {
-                            option
-                                .name("is_ohlc")
-                                .description("Choose whether the graph is ohlc")
-                                .kind(ApplicationCommandOptionType::Boolean)
-                                .required(false)
-                        })
+                    command.name(coin.id).description(format!(
+                        "Fetch price info for {} ({})",
+                        coin.name, coin.symbol
+                    ))
                 })
                 .await
             });

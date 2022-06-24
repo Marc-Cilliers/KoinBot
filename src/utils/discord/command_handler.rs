@@ -13,7 +13,10 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
     let command_copy = command.clone();
     let ctx_copy = ctx.clone();
 
-    let res = commands::get_price::main(ctx_copy, command_copy).await;
+    let res = match command_name.as_str() {
+        "niche" => commands::niche::main(ctx_copy, command_copy).await,
+        _ => commands::coin::main(ctx_copy, command_copy).await,
+    };
 
     if let Err(err) = res {
         command

@@ -10,18 +10,16 @@ use serenity::{
 };
 
 use crate::utils::discord::utils::get_command_info;
-use crate::utils::gecko::get_ohlc;
 use crate::utils::gecko::lib::{Amount, Coin};
 use crate::utils::gecko::{get_coin, lib::MarketChange};
-use crate::utils::plotter::{get_line_chart, get_ohlc_chart};
+use crate::utils::plotter::get_line_chart;
 
 pub async fn main(ctx: Context, command: ApplicationCommandInteraction) -> Result<()> {
-    let is_ohlc = get_is_ohlc(&command);
-    let command_name = &command.data.name;
-    let coin = get_coin(&command_name).await?;
+    let niche_coin = get_niche_coin(&command);
+    let coin = get_coin(&niche_coin).await?;
     let coin1 = coin.clone();
 
-    let graph_handle = tokio::spawn(async move { build_graph(&coin1, is_ohlc).await });
+    let graph_handle = tokio::spawn(async move { build_graph(&coin1).await });
     let message_handle = tokio::spawn(async move { build_message(&coin).await });
 
     let (title, title_url, description, thumbnail, fields) = message_handle.await??;
@@ -94,22 +92,18 @@ async fn build_message(
     Ok((title, title_url, description, thumbnail, fields))
 }
 
-async fn build_graph(coin: &Coin, is_ohlc: bool) -> Result<String> {
-    match is_ohlc {
-        true => {
-            let ohlc = get_ohlc(coin.id.as_str()).await?;
-            Ok(get_ohlc_chart(&ohlc, coin.id.as_str())?)
-        }
-        false => Ok(get_line_chart(coin)?),
-    }
+async fn build_graph(coin: &Coin) -> Result<String> {
+    get_line_chart(coin)
 }
 
-fn get_is_ohlc(command: &ApplicationCommandInteraction) -> bool {
+fn get_niche_coin(command: &ApplicationCommandInteraction) -> String {
     let command_info = get_command_info(&command).unwrap();
 
     command_info
-        .get_arg("is_ohlc")
-        .unwrap_or(Value::Bool(false))
-        .as_bool()
+        .get_arg("coin")
+        .unwrap_or(Value::String("".into()))
+        .as_str()
         .unwrap()
+        .trim()
+        .replace(" ", "-")
 }
