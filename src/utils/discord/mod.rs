@@ -20,6 +20,8 @@ use tokio::task::JoinHandle;
 
 use crate::utils::gecko::get_top_coins;
 
+use super::gecko::lib::CoinInfo;
+
 struct Handler;
 
 #[async_trait]
@@ -40,51 +42,57 @@ impl EventHandler for Handler {
 
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
-        check_for_command_recalibration(&ctx).await;
+        check_for_coin_updates(&ctx).await;
     }
 }
 
-async fn check_for_command_recalibration(ctx: &Context) {
-    let reset_commands = env::var("RESET_COMMANDS").unwrap_or("n".into());
+async fn check_for_coin_updates(ctx: &Context) {
+    let update_coins = env::var("UPDATE_COINS").unwrap_or("n".into());
 
-    println!("Reset commands? {}", reset_commands);
-
-    if reset_commands.as_str() != "y" {
-        println!("Skipping recalibration");
+    if update_coins.as_str() != "y" {
         return;
     }
 
-    println!("Starting recalibration");
-    let current_commands = ApplicationCommand::get_global_application_commands(&ctx.http)
+    let mut current_commands = ApplicationCommand::get_global_application_commands(&ctx.http)
         .await
         .expect("Error fetching current commands");
 
-    println!("{} active commands", current_commands.len());
-    let mut deletion_handles: Vec<JoinHandle<()>> = vec![];
+    let mut coin_list = get_top_coins().await.expect("Error fetching top coins");
+    coin_list.sort_by(|a, b| a.id.cmp(&b.id));
+    current_commands.sort_by(|a, b| a.name.to_string().cmp(&b.name.to_string()));
 
-    current_commands.into_iter().for_each(|command| {
-        let ctx1 = ctx.clone();
-        let handle = tokio::spawn(async move {
-            println!("[{}] -> Starting...", command.name);
-            ApplicationCommand::delete_global_application_command(&ctx1.http, command.id)
-                .await
-                .ok();
-            println!("[{}] -> Complete!", command.name);
-        });
-        deletion_handles.push(handle)
-    });
+    match current_commands.binary_search_by(|c| c.name.cmp(&"niche".into())) {
+        Ok(niche_index) => current_commands.remove(niche_index),
+        _ => return,
+    };
 
-    println!(" ---- Waiting for command deletion ---- ");
-    join_all(deletion_handles).await;
-    println!(" !!!! Commands Deleted! !!!! ");
+    let mut update_handles: Vec<JoinHandle<()>> = vec![];
 
-    println!("Starting command creation...");
-    let coin_list = get_top_coins().await.unwrap();
+    for i in 0..coin_list.len() - 1 {
+        let possible_command = current_commands.get(i);
+
+        match possible_command {
+            Some(command) => {
+                let coin_changed = command.name.to_string() != coin_list[i].id;
+
+                if coin_changed {
+                    let handle = replace_coin(&ctx, &command, &coin_list[i]);
+                    update_handles.push(handle);
+                }
+            }
+            None => {
+                let handle = add_coin(&ctx, &coin_list[i]);
+                update_handles.push(handle);
+            }
+        };
+    }
+
+    join_all(update_handles).await;
 
     ApplicationCommand::create_global_application_command(&ctx.http, |command| {
         command
             .name("niche")
-            .description("Fetch price info for a niche coin")
+            .description("Fetch price info for a (more niche) coin")
             .create_option(|option| {
                 option
                     .name("coin")
@@ -95,18 +103,50 @@ async fn check_for_command_recalibration(ctx: &Context) {
     })
     .await
     .expect("Error creating niche command");
+}
 
-    coin_list.into_iter().for_each(|coin| {
-        let ctx_clone = ctx.clone();
-        tokio::spawn(async move {
-            ApplicationCommand::create_global_application_command(&ctx_clone.http, |command| {
-                command
-                    .name(coin.id)
-                    .description(format!("Fetch price info for {} ({})", "thingy", "thingy"))
-            })
+fn add_coin(ctx: &Context, coin: &CoinInfo) -> JoinHandle<()> {
+    let ctx1 = ctx.clone();
+    let coin1 = coin.clone();
+
+    tokio::spawn(async move {
+        let id = coin1.id.clone();
+        println!("[{}] ==> Adding...", id);
+        ApplicationCommand::create_global_application_command(&ctx1.http, |command| {
+            command.name(coin1.id).description(format!(
+                "Fetch price info for {} ({})",
+                coin1.name, coin1.symbol
+            ))
+        })
+        .await
+        .ok();
+        println!("[{}] ==> Complete!", id);
+    })
+}
+
+fn replace_coin(ctx: &Context, command: &ApplicationCommand, coin: &CoinInfo) -> JoinHandle<()> {
+    let ctx1 = ctx.clone();
+    let command1 = command.clone();
+    let coin1 = coin.clone();
+
+    tokio::spawn(async move {
+        let name = command1.name.clone();
+        let id = coin1.name.clone();
+        println!("[{} -> {}] ==> Replacing...", name, id);
+        ApplicationCommand::delete_global_application_command(&ctx1.http, command1.id)
             .await
-        });
-    });
+            .ok();
+
+        ApplicationCommand::create_global_application_command(&ctx1.http, |command| {
+            command.name(coin1.id).description(format!(
+                "Fetch price info for {} ({})",
+                coin1.name, coin1.symbol
+            ))
+        })
+        .await
+        .ok();
+        println!("[{} -> {}] ==> Complete!", name, id);
+    })
 }
 
 #[tokio::main]
