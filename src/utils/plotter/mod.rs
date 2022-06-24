@@ -23,11 +23,7 @@ pub fn get_line_chart(coin: &Coin) -> Result<String> {
         low = if item < low { item } else { low };
     });
 
-    let file_name = format!(
-        "{}_{}",
-        coin.localization.en,
-        Local::now().format("%Y%m%d%H%M%S%f")
-    );
+    let file_name = format!("{}_{}", coin.id, Local::now().format("%Y%m%d%H%M%S%f"));
     let file_path = format!("{}.png", file_name);
 
     let root = BitMapBackend::new(&file_path, (GRAPH_WIDTH, GRAPH_HEIGHT)).into_drawing_area();
