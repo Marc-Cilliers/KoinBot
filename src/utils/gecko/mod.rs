@@ -61,8 +61,8 @@ pub async fn get_list() -> Result<Vec<CoinInfo>, GeckoError> {
     }
 }
 
-pub async fn get_top_coins() -> Result<Vec<CoinInfo>, GeckoError> {
-    let url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=gecko_desc&per_page=99&page=1&sparkline=false";
+pub async fn get_top_coins(count: u8) -> Result<Vec<CoinInfo>, GeckoError> {
+    let url = format!("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=gecko_desc&per_page={}&page=1&sparkline=false", count);
     let res = reqwest::get(url).await?;
 
     match res.status() {
