@@ -19,6 +19,8 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
     };
 
     if let Err(err) = res {
+        println!("{:?}", err);
+
         command
             .create_interaction_response(&ctx.http, |r| {
                 r.kind(InteractionResponseType::ChannelMessageWithSource)

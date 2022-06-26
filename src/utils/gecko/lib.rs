@@ -1,8 +1,8 @@
 use regex::{Captures, Regex};
 use rust_decimal::Decimal;
-use rusty_money::{iso, Money};
+use rusty_money::{iso::Currency, Money};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::fmt;
+use std::{fmt, ops::Index};
 
 #[derive(Debug)]
 pub enum GeckoError {
@@ -124,6 +124,76 @@ pub struct CurrencyConversions {
     pub bits: Decimal,
     pub link: Decimal,
     pub sats: Decimal,
+}
+
+impl Index<&'_ str> for CurrencyConversions {
+    type Output = Decimal;
+    fn index(&self, s: &str) -> &Decimal {
+        match s {
+            "aed" => &self.aed,
+            "ars" => &self.ars,
+            "aud" => &self.aud,
+            "bch" => &self.bch,
+            "bdt" => &self.bdt,
+            "bhd" => &self.bhd,
+            "bmd" => &self.bmd,
+            "bnb" => &self.bnb,
+            "brl" => &self.brl,
+            "btc" => &self.btc,
+            "cad" => &self.cad,
+            "chf" => &self.chf,
+            "clp" => &self.clp,
+            "cny" => &self.cny,
+            "czk" => &self.czk,
+            "dkk" => &self.dkk,
+            "dot" => &self.dot,
+            "eos" => &self.eos,
+            "eth" => &self.eth,
+            "eur" => &self.eur,
+            "gbp" => &self.gbp,
+            "hkd" => &self.hkd,
+            "huf" => &self.huf,
+            "idr" => &self.idr,
+            "ils" => &self.ils,
+            "inr" => &self.inr,
+            "jpy" => &self.jpy,
+            "krw" => &self.krw,
+            "kwd" => &self.kwd,
+            "lkr" => &self.lkr,
+            "ltc" => &self.ltc,
+            "mmk" => &self.mmk,
+            "mxn" => &self.mxn,
+            "myr" => &self.myr,
+            "ngn" => &self.ngn,
+            "nok" => &self.nok,
+            "nzd" => &self.nzd,
+            "php" => &self.php,
+            "pkr" => &self.pkr,
+            "pln" => &self.pln,
+            "rub" => &self.rub,
+            "sar" => &self.sar,
+            "sek" => &self.sek,
+            "sgd" => &self.sgd,
+            "thb" => &self.thb,
+            "try" => &self.try_,
+            "twd" => &self.twd,
+            "uah" => &self.uah,
+            "usd" => &self.usd,
+            "vef" => &self.vef,
+            "vnd" => &self.vnd,
+            "xag" => &self.xag,
+            "xau" => &self.xau,
+            "xdr" => &self.xdr,
+            "xlm" => &self.xlm,
+            "xrp" => &self.xrp,
+            "yfi" => &self.yfi,
+            "zar" => &self.zar,
+            "bits" => &self.bits,
+            "link" => &self.link,
+            "sats" => &self.sats,
+            _ => panic!("unknown field: {}", s),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -301,27 +371,40 @@ impl Coin {
         cleaned_paragraph.to_string()
     }
 
-    pub fn get_formatted_amount(self: &Self, amount: Amount) -> String {
+    pub fn get_formatted_amount(self: &Self, amount: Amount, currency: Currency) -> String {
         let value = match amount {
-            Amount::CurrentPrice => self.market_data.current_price.usd,
-            Amount::Volume24h => self.market_data.total_volume.usd,
-            Amount::MarketCap => self.market_data.market_cap.usd,
+            Amount::CurrentPrice => {
+                self.market_data.current_price[&currency.iso_alpha_code.to_lowercase()]
+            }
+            Amount::Volume24h => {
+                self.market_data.total_volume[&currency.iso_alpha_code.to_lowercase()]
+            }
+            Amount::MarketCap => {
+                self.market_data.market_cap[&currency.iso_alpha_code.to_lowercase()]
+            }
         };
 
-        let current_price = Money::from_decimal(value, iso::USD);
+        let current_price = Money::from_decimal(value, &currency);
         format!("```{}```", current_price)
     }
 
-    pub fn get_formatted_change(self: &Self, market_change: MarketChange) -> String {
+    pub fn get_formatted_change(
+        self: &Self,
+        market_change: MarketChange,
+        currency: Currency,
+    ) -> String {
         let change = match market_change {
             MarketChange::PercentageChange1h => {
-                self.market_data.price_change_percentage_1h_in_currency.usd
+                self.market_data.price_change_percentage_1h_in_currency
+                    [&currency.iso_alpha_code.to_lowercase()]
             }
             MarketChange::PercentageChange24h => {
-                self.market_data.price_change_percentage_24h_in_currency.usd
+                self.market_data.price_change_percentage_24h_in_currency
+                    [&currency.iso_alpha_code.to_lowercase()]
             }
             MarketChange::PercentageChange7d => {
-                self.market_data.price_change_percentage_7d_in_currency.usd
+                self.market_data.price_change_percentage_7d_in_currency
+                    [&currency.iso_alpha_code.to_lowercase()]
             }
         };
 

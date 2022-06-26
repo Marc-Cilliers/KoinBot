@@ -1,6 +1,7 @@
 use std::fs;
 
 use anyhow::Result;
+use rusty_money::iso::Currency;
 use serenity::model::interactions::InteractionResponseType;
 use serenity::model::Timestamp;
 use serenity::utils::Colour;
@@ -8,17 +9,21 @@ use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
 
+use crate::utils::discord::utils::get_currency_option;
 use crate::utils::gecko::lib::{Amount, Coin};
 use crate::utils::gecko::{get_coin, lib::MarketChange};
 use crate::utils::plotter::get_line_chart;
 
 pub async fn main(ctx: Context, command: ApplicationCommandInteraction) -> Result<()> {
     let command_name = &command.data.name;
+
+    let currency = get_currency_option(&command)?;
+
     let coin = get_coin(&command_name).await?;
     let coin1 = coin.clone();
 
     let graph_handle = tokio::spawn(async move { build_graph(coin1).await });
-    let message_handle = tokio::spawn(async move { build_message(coin).await });
+    let message_handle = tokio::spawn(async move { build_message(coin, currency).await });
 
     let (title, title_url, description, thumbnail, fields) = message_handle.await??;
     let filename = graph_handle.await??;
@@ -49,40 +54,47 @@ pub async fn main(ctx: Context, command: ApplicationCommandInteraction) -> Resul
 
 async fn build_message(
     coin: Coin,
+    currency: Currency,
 ) -> Result<(String, String, String, String, Vec<(String, String, bool)>)> {
     let title = coin.localization.en.clone();
     let description = coin.get_short_description();
     let thumbnail = coin.image.large.clone();
-    let title_url = coin.links.homepage[0].clone();
+    let homepage = coin.links.homepage[0].clone();
+    let title_url = if !homepage.contains("http") {
+        format!("https://{}", homepage)
+    } else {
+        homepage
+    };
+
     let fields: Vec<(String, String, bool)> = vec![
         (
             "Price".into(),
-            coin.get_formatted_amount(Amount::CurrentPrice),
+            coin.get_formatted_amount(Amount::CurrentPrice, currency),
             true,
         ),
         (
             "24h Volume".into(),
-            coin.get_formatted_amount(Amount::Volume24h),
+            coin.get_formatted_amount(Amount::Volume24h, currency),
             true,
         ),
         (
             "Market Cap".into(),
-            coin.get_formatted_amount(Amount::MarketCap),
+            coin.get_formatted_amount(Amount::MarketCap, currency),
             true,
         ),
         (
             "1h".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange1h),
+            coin.get_formatted_change(MarketChange::PercentageChange1h, currency),
             true,
         ),
         (
             "24h".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange24h),
+            coin.get_formatted_change(MarketChange::PercentageChange24h, currency),
             true,
         ),
         (
             "7d".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange7d),
+            coin.get_formatted_change(MarketChange::PercentageChange7d, currency),
             true,
         ),
     ];

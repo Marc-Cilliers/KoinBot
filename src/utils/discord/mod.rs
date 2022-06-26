@@ -6,6 +6,8 @@ mod utils;
 use std::env;
 
 use command_handler::handle_command;
+use rusty_money::iso::{self, Currency};
+use serenity::builder::CreateApplicationCommandOption;
 use serenity::model::interactions::application_command::{
     ApplicationCommand, ApplicationCommandOptionType,
 };
@@ -19,6 +21,36 @@ use serenity::{
 use crate::utils::gecko::get_top_coins;
 
 const COIN_COUNT: u8 = 99;
+
+lazy_static! {
+    static ref TOP_CURRENCIES: Vec<&'static Currency> = vec![
+        iso::USD,
+        iso::EUR,
+        iso::JPY,
+        iso::GBP,
+        iso::AUD,
+        iso::CAD,
+        iso::CHF,
+        iso::CNY,
+        iso::HKD,
+        iso::NZD,
+        iso::SEK,
+        iso::KRW,
+        iso::SGD,
+        iso::NOK,
+        iso::MXN,
+        iso::INR,
+        iso::RUB,
+        iso::ZAR,
+        iso::TRY,
+        iso::BRL,
+        iso::TWD,
+        iso::DKK,
+        iso::PLN,
+        iso::THB,
+        iso::IDR
+    ];
+}
 
 struct Handler;
 
@@ -53,23 +85,27 @@ async fn update_commands(ctx: &Context) {
 
     let coin_list = get_top_coins(COIN_COUNT).await.unwrap();
 
-    let global_commands = ApplicationCommand::get_global_application_commands(&ctx.http)
-        .await
-        .unwrap();
+    // Create the currencies option
+    let mut currency_option = CreateApplicationCommandOption::default();
+    currency_option.name("currency");
+    currency_option.description("Your preferred currency. Default is: USD");
+    currency_option.kind(ApplicationCommandOptionType::String);
 
-    println!("===== All Global Commands =====");
-    global_commands
-        .iter()
-        .for_each(|cmd| println!("({}) [{}]", cmd.id, cmd.name));
+    TOP_CURRENCIES.iter().for_each(|currency| {
+        currency_option.add_string_choice(currency.name, currency.iso_alpha_code);
+    });
 
     ApplicationCommand::set_global_application_commands(&ctx.http, |command| {
         // Coin commands
         coin_list.into_iter().for_each(|coin| {
+            let currency_option1 = currency_option.clone();
             command.create_application_command(|cmd| {
-                cmd.name(coin.id).description(format!(
-                    "Fetch price info for {} ({})",
-                    coin.name, coin.symbol
-                ))
+                cmd.name(coin.id)
+                    .description(format!(
+                        "Fetch price info for {} ({})",
+                        coin.name, coin.symbol
+                    ))
+                    .add_option(currency_option1)
             });
         });
 

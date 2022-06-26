@@ -1,6 +1,7 @@
 use std::fs;
 
 use anyhow::Result;
+use rusty_money::iso;
 use serenity::json::Value;
 use serenity::model::interactions::InteractionResponseType;
 use serenity::model::Timestamp;
@@ -59,32 +60,32 @@ async fn build_message(
     let fields: Vec<(String, String, bool)> = vec![
         (
             "Price".into(),
-            coin.get_formatted_amount(Amount::CurrentPrice),
+            coin.get_formatted_amount(Amount::CurrentPrice, *iso::USD),
             true,
         ),
         (
             "24h Volume".into(),
-            coin.get_formatted_amount(Amount::Volume24h),
+            coin.get_formatted_amount(Amount::Volume24h, *iso::USD),
             true,
         ),
         (
             "Market Cap".into(),
-            coin.get_formatted_amount(Amount::MarketCap),
+            coin.get_formatted_amount(Amount::MarketCap, *iso::USD),
             true,
         ),
         (
             "1h".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange1h),
+            coin.get_formatted_change(MarketChange::PercentageChange1h, *iso::USD),
             true,
         ),
         (
             "24h".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange24h),
+            coin.get_formatted_change(MarketChange::PercentageChange24h, *iso::USD),
             true,
         ),
         (
             "7d".into(),
-            coin.get_formatted_change(MarketChange::PercentageChange7d),
+            coin.get_formatted_change(MarketChange::PercentageChange7d, *iso::USD),
             true,
         ),
     ];
