@@ -13,20 +13,26 @@ Want to give KoinBot a try? [Click Here](https://discord.com/api/oauth2/authoriz
 
 ## Commands
 
-<!-- COMMANDS_START -->
-
-Koinbot technically has has 251 commands. There are 2 basic categories;
+Koinbot has 100 slash commands (currently the Discord limit). There are 2 basic categories;
 
 ```
-/{coin-name} (eg. /bitcoin)                         | Exists for the 250 most popular coins
+/{coin-name} (eg. /bitcoin)                         | Exists for the 99 most popular coins
 /niche {coin-name} (eg. /niche arb protocol)        | For every other niche coin
+```
+
+### Options
+
+Options are extra, optional arguments that can be passed to each command.
+
+```
+currency                                            | Allows the user to select their preferred currency. 25 of the most popular currencies are available (currently the Discord limit of enum-type options)
 ```
 
 ## Roadmap
 
-| Goal                 |   Status    |
-| -------------------- | :---------: |
-| Localization support | Not Started |
-| Various currencies   | Not Started |
-| UI Tweaks            | Not Started |
-| NFT Support          | Not Started |
+| Goal                 |   Status    |     |
+| -------------------- | :---------: | :-: |
+| Various currencies   |  Complete   | ✅  |
+| Localization support | Not Started | 🟠  |
+| UI Tweaks            | Not Started | 🟠  |
+| NFT Support          | Not Started | 🟠  |
