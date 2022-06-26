@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use super::commands;
 use serenity::{
     client::Context,
@@ -7,8 +9,9 @@ use serenity::{
 };
 
 pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction) {
+    let start = Instant::now();
+
     let command_name = &command.data.name;
-    println!("Handling command: {}", command_name);
 
     let command_copy = command.clone();
     let ctx_copy = ctx.clone();
@@ -18,8 +21,13 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
         _ => commands::coin::main(ctx_copy, command_copy).await,
     };
 
+    let elapsed = start.elapsed();
+
     if let Err(err) = res {
-        println!("{:?}", err);
+        println!(
+            "Error occurred for [{}] ({:.2?}): {:?}",
+            command_name, elapsed, err
+        );
 
         command
             .create_interaction_response(&ctx.http, |r| {
@@ -27,6 +35,11 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
                     .interaction_response_data(|message| message.content(format!("{}", err)))
             })
             .await
-            .expect("Error reporting Discord error");
+            .ok();
     }
+
+    println!(
+        "[{}] Command Success! ({:.2?} elapsed)",
+        command_name, elapsed
+    );
 }
