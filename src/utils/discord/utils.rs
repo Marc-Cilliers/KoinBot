@@ -70,3 +70,16 @@ pub async fn message_owner(ctx: &Context, message: String) {
         .await
         .expect("Error sending dm to owner");
 }
+
+pub fn get_invoking_user(command: &ApplicationCommandInteraction) -> String {
+    let member = command.member.clone();
+
+    match member {
+        Some(member) => format!(
+            "{} ({})",
+            member.user.name,
+            member.nick.unwrap_or("No nickname".into())
+        ),
+        _ => "Anonymous".into(),
+    }
+}

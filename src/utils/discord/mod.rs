@@ -4,19 +4,16 @@ pub mod lib;
 mod utils;
 
 use std::env;
+use std::time::Instant;
 
 use command_handler::handle_command;
 use rusty_money::iso::{self, Currency};
 use serenity::builder::CreateApplicationCommandOption;
+use serenity::model::guild::Guild;
 use serenity::model::interactions::application_command::{
     ApplicationCommand, ApplicationCommandOptionType,
 };
-use serenity::{
-    async_trait,
-    model::interactions::Interaction,
-    model::{channel::Message, gateway::Ready},
-    prelude::*,
-};
+use serenity::{async_trait, model::gateway::Ready, model::interactions::Interaction, prelude::*};
 
 use crate::utils::gecko::get_top_coins;
 
@@ -68,19 +65,33 @@ impl EventHandler for Handler {
         // Ignore any non-commands for now
     }
 
-    async fn message(&self, ctx: Context, msg: Message) {
-        message_owner(
-            &ctx,
-            format!(
-                "Recevied a dm from {} ({}): {}",
-                msg.author.name, msg.author.id, msg.content
-            ),
-        )
-        .await;
+    async fn guild_create(&self, ctx: Context, guild: Guild) {
+        let mut msg = format!("__{} Created__\n\n", guild.name);
+
+        msg = format!("{}• {} members\n", msg, guild.member_count);
+        msg = format!("{}• joined at {}\n", msg, guild.joined_at);
+        msg = format!("{}• is it large? {}\n", msg, guild.large);
+
+        message_owner(&ctx, msg).await;
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        message_owner(&ctx, format!("{} is connected!", ready.user.name)).await;
+        let mut msg = format!("__Connection Success__\n\n");
+
+        msg = format!("{}• {} guilds connected;\n", msg, ready.guilds.len());
+        ready.guilds.iter().for_each(|guild| {
+            msg = format!("{}    • {}\n", msg, guild.id);
+        });
+        msg = format!("{}\n", msg);
+
+        match ready.shard {
+            Some(shards) => {
+                msg = format!("{}• shards: {:?}\n", msg, shards);
+            }
+            _ => return,
+        };
+        message_owner(&ctx, msg).await;
+
         update_commands(&ctx).await;
     }
 }
@@ -91,6 +102,8 @@ async fn update_commands(ctx: &Context) {
     if update_commands.as_str() != "y" {
         return;
     }
+
+    let start = Instant::now();
 
     let coin_list = get_top_coins(COIN_COUNT).await.unwrap();
 
@@ -134,6 +147,13 @@ async fn update_commands(ctx: &Context) {
     })
     .await
     .expect("Error creating global commands");
+
+    let elapsed = start.elapsed();
+    message_owner(
+        &ctx,
+        format!("Global Command Updates Success! ({:.3?} elapsed)", elapsed),
+    )
+    .await;
 }
 
 #[tokio::main]
