@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🪙 KoinBot 🪙</h1>
+  <h1>KoinBot</h1>
   <h3>Cryptocurrency market data at the speed of light ⚡️</h3>
 </div>
 
