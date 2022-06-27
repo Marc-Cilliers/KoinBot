@@ -26,7 +26,7 @@ pub async fn main(ctx: Context, command: ApplicationCommandInteraction) -> Resul
     let graph_handle = tokio::spawn(async move { build_graph(rx, &command_name, graph).await });
 
     let coin = get_coin(&command_name1).await?;
-    tx.send(coin.clone()).await?;
+    tx.send(coin.clone()).await.ok();
 
     let message_handle = tokio::spawn(async move { build_message(coin, currency).await });
 
