@@ -40,13 +40,14 @@ jobs:
         env:
           DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
           GITHUB_SHA: $GITHUB_SHA
         with:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           username: ${{ secrets.SSH_USERNAME }}
-          envs: IMAGE_NAME,REGISTRY,DIGITALOCEAN_TOKEN,GITHUB_SHA,DISCORD_TOKEN
+          envs: IMAGE_NAME,REGISTRY,DIGITALOCEAN_TOKEN,GITHUB_SHA,DISCORD_TOKEN,OWNER_ID
           script: |
             # Login to registry
             docker login -u $(echo $DIGITALOCEAN_TOKEN) -p $(echo $DIGITALOCEAN_TOKEN) registry.digitalocean.com
@@ -59,6 +60,7 @@ jobs:
             # Run a new container from a new image
             docker run -d \
             -e DISCORD_TOKEN=$(echo $DISCORD_TOKEN) \
+            -e OWNER_ID=$(echo $OWNER_ID) \
             -e UPDATE_COMMANDS='y' \
             --restart always \
             --name $(echo $IMAGE_NAME) \

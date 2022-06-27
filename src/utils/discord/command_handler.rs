@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use crate::utils::discord::utils::message_owner;
+
 use super::commands;
 use serenity::{
     client::Context,
@@ -24,10 +26,14 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
     let elapsed = start.elapsed();
 
     if let Err(err) = res {
-        println!(
-            "Error occurred for [{}] ({:.2?}): {:?}",
-            command_name, elapsed, err
-        );
+        message_owner(
+            &ctx,
+            format!(
+                "Error occurred for [{}] ({:.2?}): {:?}",
+                command_name, elapsed, err
+            ),
+        )
+        .await;
 
         command
             .create_interaction_response(&ctx.http, |r| {
@@ -38,8 +44,12 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
             .ok();
     }
 
-    println!(
-        "[{}] Command Success! ({:.2?} elapsed)",
-        command_name, elapsed
-    );
+    message_owner(
+        &ctx,
+        format!(
+            "[{}] Command Success! ({:.2?} elapsed)",
+            command_name, elapsed
+        ),
+    )
+    .await;
 }

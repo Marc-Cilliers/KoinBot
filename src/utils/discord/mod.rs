@@ -20,6 +20,8 @@ use serenity::{
 
 use crate::utils::gecko::get_top_coins;
 
+use self::utils::message_owner;
+
 const COIN_COUNT: u8 = 99;
 
 lazy_static! {
@@ -66,12 +68,19 @@ impl EventHandler for Handler {
         // Ignore any non-commands for now
     }
 
-    async fn message(&self, _: Context, msg: Message) {
-        println!("THE MESSAGE: {:?}", msg);
+    async fn message(&self, ctx: Context, msg: Message) {
+        message_owner(
+            &ctx,
+            format!(
+                "Recevied a dm from {} ({}): {}",
+                msg.author.name, msg.author.id, msg.content
+            ),
+        )
+        .await;
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        message_owner(&ctx, format!("{} is connected!", ready.user.name)).await;
         update_commands(&ctx).await;
     }
 }
@@ -120,6 +129,7 @@ async fn update_commands(ctx: &Context) {
                         .kind(ApplicationCommandOptionType::String)
                         .required(true)
                 })
+                .add_option(currency_option)
         })
     })
     .await
