@@ -110,17 +110,26 @@ async fn update_commands(ctx: &Context) {
     // Create the currencies option
     let mut currency_option = CreateApplicationCommandOption::default();
     currency_option.name("currency");
-    currency_option.description("Your preferred currency. Default is: USD");
+    currency_option.description("Preferred currency. Default is: USD");
     currency_option.kind(ApplicationCommandOptionType::String);
 
     TOP_CURRENCIES.iter().for_each(|currency| {
         currency_option.add_string_choice(currency.name, currency.iso_alpha_code);
     });
 
+    // Create the graph type option
+    let mut graph_option = CreateApplicationCommandOption::default();
+    graph_option.name("graph");
+    graph_option.description("Preferred graph type. Default is: line");
+    graph_option.kind(ApplicationCommandOptionType::String);
+    graph_option.add_string_choice("Line Graph", "line");
+    graph_option.add_string_choice("OHLC Graph", "ohlc");
+
     ApplicationCommand::set_global_application_commands(&ctx.http, |command| {
         // Coin commands
         coin_list.into_iter().for_each(|coin| {
             let currency_option1 = currency_option.clone();
+            let graph_option1 = graph_option.clone();
             command.create_application_command(|cmd| {
                 cmd.name(coin.id)
                     .description(format!(
@@ -128,6 +137,7 @@ async fn update_commands(ctx: &Context) {
                         coin.name, coin.symbol
                     ))
                     .add_option(currency_option1)
+                    .add_option(graph_option1)
             });
         });
 
@@ -143,6 +153,7 @@ async fn update_commands(ctx: &Context) {
                         .required(true)
                 })
                 .add_option(currency_option)
+            // .add_option(graph_option)
         })
     })
     .await

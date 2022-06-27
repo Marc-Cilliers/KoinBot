@@ -60,6 +60,21 @@ pub fn get_currency_option(command: &ApplicationCommandInteraction) -> Result<Cu
     }
 }
 
+pub fn get_graph_option(command: &ApplicationCommandInteraction) -> Result<String> {
+    let command_info = get_command_info(&command)?;
+    let graph_arg = command_info.get_arg("graph");
+
+    let default = Ok("line".into());
+
+    match graph_arg {
+        Some(graph) => match graph.as_str() {
+            Some(graph_str) => Ok(graph_str.into()),
+            None => default,
+        },
+        None => default,
+    }
+}
+
 pub async fn message_owner(ctx: &Context, message: String) {
     let vvv = UserId(*OWNER_ID)
         .to_user(ctx.clone())

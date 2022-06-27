@@ -8,21 +8,26 @@ use serenity::utils::Colour;
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
+use tokio::sync::mpsc::{self, Receiver, Sender};
 
-use crate::utils::discord::utils::get_currency_option;
+use crate::utils::discord::utils::{get_currency_option, get_graph_option};
+use crate::utils::gecko::get_ohlc;
 use crate::utils::gecko::lib::{Amount, Coin};
 use crate::utils::gecko::{get_coin, lib::MarketChange};
-use crate::utils::plotter::get_line_chart;
+use crate::utils::plotter::{get_line_chart, get_ohlc_chart};
 
 pub async fn main(ctx: Context, command: ApplicationCommandInteraction) -> Result<()> {
-    let command_name = &command.data.name;
+    let command_name = command.data.name.clone();
+    let command_name1 = command_name.clone();
 
     let currency = get_currency_option(&command)?;
+    let graph = get_graph_option(&command)?;
+    let (tx, rx): (Sender<Coin>, Receiver<Coin>) = mpsc::channel(1);
+    let graph_handle = tokio::spawn(async move { build_graph(rx, &command_name, graph).await });
 
-    let coin = get_coin(&command_name).await?;
-    let coin1 = coin.clone();
+    let coin = get_coin(&command_name1).await?;
+    tx.send(coin.clone()).await?;
 
-    let graph_handle = tokio::spawn(async move { build_graph(coin1).await });
     let message_handle = tokio::spawn(async move { build_message(coin, currency).await });
 
     let (title, title_url, description, thumbnail, fields) = message_handle.await??;
@@ -102,6 +107,16 @@ async fn build_message(
     Ok((title, title_url, description, thumbnail, fields))
 }
 
-async fn build_graph(coin: Coin) -> Result<String> {
-    get_line_chart(&coin)
+async fn build_graph(mut rx: Receiver<Coin>, coin_name: &str, graph: String) -> Result<String> {
+    match graph.as_str() {
+        "line" => {
+            let coin = rx.recv().await.unwrap();
+            get_line_chart(&coin)
+        }
+        "ohlc" => {
+            let ohlc_data = get_ohlc(&coin_name).await?;
+            get_ohlc_chart(&ohlc_data, &coin_name)
+        }
+        _ => Ok("".into()),
+    }
 }
