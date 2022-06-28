@@ -148,6 +148,8 @@ pub fn get_ohlc_chart(data: &Vec<Vec<f64>>, coin: &str) -> Result<String> {
         .configure_mesh()
         .bold_line_style(bold_line_style)
         .disable_x_mesh()
+        .axis_style(&RGBColor(30, 30, 30))
+        .light_line_style(&RGBColor(30, 30, 30))
         .y_label_formatter(&|y| {
             let y_str = &y.to_string();
             let value = Money::from_str(y_str, iso::USD).unwrap();
