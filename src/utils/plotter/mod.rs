@@ -117,7 +117,7 @@ pub fn get_ohlc_chart(data: &Vec<Vec<f64>>, coin: &str) -> Result<String> {
 
     let root = BitMapBackend::new(&file_path, (GRAPH_WIDTH, GRAPH_HEIGHT)).into_drawing_area();
 
-    root.fill(&TRANSPARENT)?;
+    root.fill(&RGBColor(30, 30, 30).to_rgba())?;
 
     let chart_top = high * 1.05;
     let chart_bottom = low / 1.05;
