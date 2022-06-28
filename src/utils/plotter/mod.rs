@@ -28,7 +28,7 @@ pub fn get_line_chart(coin: &Coin) -> Result<String> {
 
     let root = BitMapBackend::new(&file_path, (GRAPH_WIDTH, GRAPH_HEIGHT)).into_drawing_area();
 
-    root.fill(&RGBColor(30, 30, 30).to_rgba())?;
+    root.fill(&RGBColor(32, 34, 37).to_rgba())?;
 
     let chart_top = high * 1.05;
     let chart_bottom = low / 1.05;
@@ -47,7 +47,7 @@ pub fn get_line_chart(coin: &Coin) -> Result<String> {
 
     let bold_line_style = ShapeStyle {
         stroke_width: 1,
-        color: RGBColor(55, 55, 55).to_rgba(),
+        color: RGBColor(60, 60, 60).to_rgba(),
         filled: false,
     };
 
@@ -64,8 +64,8 @@ pub fn get_line_chart(coin: &Coin) -> Result<String> {
         .configure_mesh()
         .bold_line_style(bold_line_style)
         .disable_x_mesh()
-        .axis_style(&RGBColor(30, 30, 30))
-        .light_line_style(&RGBColor(30, 30, 30))
+        .axis_style(&RGBColor(32, 34, 37))
+        .light_line_style(&RGBColor(32, 34, 37))
         .y_label_formatter(&|y| {
             let y_str = &y.to_string();
             let value = Money::from_str(y_str, iso::USD).unwrap();
@@ -117,7 +117,7 @@ pub fn get_ohlc_chart(data: &Vec<Vec<f64>>, coin: &str) -> Result<String> {
 
     let root = BitMapBackend::new(&file_path, (GRAPH_WIDTH, GRAPH_HEIGHT)).into_drawing_area();
 
-    root.fill(&RGBColor(30, 30, 30).to_rgba())?;
+    root.fill(&RGBColor(32, 34, 37).to_rgba())?;
 
     let chart_top = high * 1.05;
     let chart_bottom = low / 1.05;
@@ -131,7 +131,7 @@ pub fn get_ohlc_chart(data: &Vec<Vec<f64>>, coin: &str) -> Result<String> {
 
     let bold_line_style = ShapeStyle {
         stroke_width: 1,
-        color: RGBColor(55, 55, 55).to_rgba(),
+        color: RGBColor(60, 60, 60).to_rgba(),
         filled: true,
     };
 
@@ -148,8 +148,8 @@ pub fn get_ohlc_chart(data: &Vec<Vec<f64>>, coin: &str) -> Result<String> {
         .configure_mesh()
         .bold_line_style(bold_line_style)
         .disable_x_mesh()
-        .axis_style(&RGBColor(30, 30, 30))
-        .light_line_style(&RGBColor(30, 30, 30))
+        .axis_style(&RGBColor(32, 34, 37))
+        .light_line_style(&RGBColor(32, 34, 37))
         .y_label_formatter(&|y| {
             let y_str = &y.to_string();
             let value = Money::from_str(y_str, iso::USD).unwrap();
