@@ -323,7 +323,7 @@ pub struct Coin {
     pub image: Image,
     pub sentiment_votes_up_percentage: Decimal,
     pub sentiment_votes_down_percentage: Decimal,
-    pub market_cap_rank: Decimal,
+    pub market_cap_rank: Option<Decimal>,
     pub coingecko_rank: Decimal,
     pub coingecko_score: Decimal,
     pub developer_score: Decimal,
