@@ -26,7 +26,6 @@ Options are extra, optional arguments that can be passed to each command.
 
 ```
 currency                                            | Allows the user to select their preferred currency. 25 of the most popular currencies are available (currently the Discord limit of enum-type options)
-
 graph                                               | Allows the user to select one of 2 graph types, either Line or OHLC.
 ```
 
